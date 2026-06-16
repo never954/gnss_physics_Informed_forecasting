@@ -1,0 +1,15 @@
+torch>=2.1.0
+gpytorch>=1.11.0
+numpy>=1.26.0
+scipy>=1.11.0
+pandas>=2.1.0
+scikit-learn>=1.4.0
+matplotlib>=3.8.0
+seaborn>=0.13.0
+tqdm>=4.66.0
+# Optional: RINEX parsing (only needed if raw RINEX data provided)
+georinex>=1.15.0
+astropy>=6.0.0
+# Testing
+pytest>=8.0.0
+pytest-cov>=4.1.0

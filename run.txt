@@ -1,0 +1,7 @@
+rm -rf data/processed/sise_intermediate/
+python src/pipeline.py \
+    --competition-data data/raw/train/ --output outputs/ --verbose
+python src/evaluate.py \
+    --predictions outputs/submission.csv \
+    --actual-data data/raw/train/2026_008.csv \
+    --output outputs/evaluation_report.csv

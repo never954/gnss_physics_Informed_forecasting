@@ -1,0 +1,87 @@
+
+
+Main Interpretation
+
+Overall:
+
+MAE  = 91.179 ns
+RMSE = 422.840 ns
+MBE  = 46.934 ns
+That means the typical absolute error is about:
+
+91 ns × 0.2998 m/ns ≈ 27 meters
+So average performance is decent, but the large RMSE tells us there are some very bad outlier satellites pulling the score upward.
+
+The bias is positive:
+
+MBE = +46.934 ns
+So on average:
+
+actual - predicted > 0
+Meaning the model is slightly under-predicting the actual SISE level.
+
+Uncertainty Calibration
+
+σ-ratio = 0.809
+Cov ±1σ = 74.5%
+Cov ±2σ = 92.9%
+Interpretation:
+
+±1σ coverage is higher than the ideal 68%, so uncertainty is a bit too wide for many normal satellites.
+±2σ coverage is below the ideal 95%, so the model still misses some large outlier cases.
+In plain terms: uncertainty is generous for easy satellites, but still not wide enough for rare bad jumps.
+That is common when a few satellites have upload/reset behavior the model did not anticipate.
+
+Horizon Behavior
+
+The errors grow with forecast horizon:
+
+15min   MAE 53 ns
+30min   MAE 55 ns
+60min   MAE 64 ns
+120min  MAE 65 ns
+1440min MAE 135 ns
+This is expected. Day-ahead prediction is harder. The 24-hour horizon is about 2.5x worse than the first 15 minutes, which is reasonable.
+
+Per-Satellite Pattern
+
+Best satellites are very stable:
+
+S23, S42, S36, S34, S21, S22
+G20, E25, J02, J03, C59, R19, R06...
+These have near-zero to low single-digit ns errors. Some SBAS rows with 0.000 MAE have low N, so do not over-interpret those as perfect; they may be sparse/flat proxy actuals.
+
+Worst satellites dominate the RMSE:
+
+R11  MAE 3890 ns
+E14  MAE 1982 ns
+S27  MAE 706 ns
+S32  MAE 606 ns
+I10  MAE 568 ns
+E11  MAE 492 ns
+C49  MAE 304 ns
+These are the real problem cases. The overall MAE is 91 ns, but RMSE is 423 ns because satellites like R11 and E14 are huge outliers.
+
+Constellation-Level Takeaway
+
+GPS: mostly good, many in 5-30 ns MAE range.
+Galileo: mixed; many good, but E14, E11, E30, E18, E09 hurt.
+GLONASS: mostly good, but R11 is catastrophic.
+BeiDou: many moderate/high bias cases, especially GEO/IGSO-style C01-C16 and C49.
+QZSS/SBAS: generally good, but sparse SBAS counts make some metrics less reliable.
+NavIC: limited coverage, I10 is poor.
+Bottom Line
+
+The pipeline is now working across constellations. The average behavior is solid, but final score is being dragged down by a small number of satellites with large unmodeled jumps or bad trend extrapolation.
+
+The next best improvement is not broad tuning; it is targeted handling for the worst satellites: R11, E14, S27, S32, I10, E11, C49. Those few are dominating RMSE and CRPS.
+
+Bottom Line
+
+ pipeline now works across constellations. The main issues are no longer coverage; they are modeling quality:
+
+Reset detection is too sensitive for low-noise satellites.
+Too many GPS/Galileo satellites are routed to StudentT.
+Some worst-case satellites like R11, E14, I10, S27, S32 dominate RMSE.
+Fallback works, but there are small bugs in BootstrapMC and GP initialization.
+The next best improvement is to tune/reset-classification logic, not the terminal command.

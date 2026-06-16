@@ -1,0 +1,38 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Caches and testing
+.pytest_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# Environments
+.env
+.venv
+venv/
+ENV/
+env/
+
+# IDEs and OS files
+.vscode/
+.idea/
+.DS_Store
+
+# Project data (ignore raw and processed datasets to keep repo light)
+data/processed/
+data/raw/train/
+!data/raw/train/synthetic_gnss_errors.csv
+data/predictions/
+
+# Project outputs (ignore logs and temporary caches)
+outputs/day8_actuals_cache/
+outputs/pipeline_run.log
+outputs/classification_log.csv
+outputs/submission.csv
+outputs/evaluation_report.csv
+outputs/gaussianity_report.csv
+outputs/gaussianity_figures/aligned_prediction_errors.csv
+outputs/gaussianity_figures/gaussianity_visual_summary.csv
