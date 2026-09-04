@@ -8,7 +8,7 @@ If running long, the **cuttable** bits are marked ✂.
 
 ---
 
-## ① The problem, you can see it — 0:50
+## ① The problem, made visible — 0:50
 **[SHOW]** live demo — 3D Earth + satellites. **[DO]** click Earth → triangulation animation.
 
 **[SAY]**
@@ -20,109 +20,105 @@ If running long, the **cuttable** bits are marked ✂.
 
 ---
 
-## ② What we're actually graded on — 0:40
+## ② What we're graded on — 0:40
 **[SHOW]** `f01_raw_data.png`
 
 **[SAY]**
-> The task: seven days of a satellite's error — X, Y, Z position and clock, all in metres — predict day eight. Two orbit types, GEO and MEO.
+> The task: seven days of a satellite's error — X, Y, Z position and clock, in metres — predict day eight. Two orbit types, GEO and MEO.
 >
-> Here's the twist that decides everything: **they don't grade us on how close we get.** Accuracy isn't the score. They grade whether our *leftover mistakes look like random noise — a clean bell curve.* And that's actually clever: if your errors are pure random noise, it *proves* you extracted every pattern that was there. Any *shape* left means you missed something. So the real game is **"prove you squeezed out everything the data had."**
+> One thing about the scoring is worth being clear on, because it isn't the obvious choice: they don't primarily grade *accuracy* — how close we get. They grade whether the *residual* — what's left after our prediction — follows a normal distribution, a bell curve. The reasoning is sound: if the leftover error is just random noise, the model has captured the predictable structure; if the residual still has shape — a trend, a cycle — there's structure it missed. So the metric tests whether we removed the predictable part, not whether the noise floor is small.
 
-**[NOTE]** Shapiro-Francia detail = appendix only. One line if a technical judge probes: *"their file says Shapiro-Wilk but the numbers only reproduce under Shapiro-Francia — we rebuilt their exact scorer, so we grade ourselves the way they will."* Flex, not headline.
+**[NOTE]** Shapiro-Francia detail = appendix only. One line if a technical judge probes: *"their file says Shapiro-Wilk but the numbers only reproduce under Shapiro-Francia — we rebuilt their exact scorer, so we grade ourselves the way they will."*
 
 ---
 
-## ③ First contact with the data — 0:55
+## ③ First look at the data — 0:55
 **[SHOW]** `f03_duplicates.png`
 
 **[SAY]**
-> Three things jumped out immediately. One: **half of every MEO file is duplicated rows** — same readings written twice. Safe to remove, we checked — but it means one test set is *six data points.* Six.
+> Three things stood out immediately. One: **about half of every MEO file is duplicated rows** — the same readings written twice. Safe to remove, we verified that — but it means one test set is only *six points*.
 >
-> Two — the big one: what actually decides day eight is *where the satellite is in its orbit, which constellation it is, and when ground control last updated it.* **None of those are columns in the file.** It's like being asked to predict tomorrow's tide when all you're handed is the water temperature. The tide is driven by the moon — and you weren't given the moon.
+> Two, and this is the important one: what actually determines day eight is where the satellite is in its orbit, which constellation it is, and when ground control last updated it. **None of those are columns in the file.** It's a bit like being asked to predict the tide from water temperature — the thing that drives it isn't in your inputs.
 
 **[SHOW]** `f21_ml_plateau.png`
 **[SAY]**
-> So we did the obvious thing first — deep learning, the fancy models the brief even suggests. We reasoned they'd just memorise noise, and instead of *claiming* it, we tested it: six standard ML models, twenty-seven thousand rows. **Every one flatlined at the dumb baseline.** That's not a failure — it's the clue. When more model does nothing, the answer isn't in the data.
+> So we tried the obvious thing first — the deep-learning models the brief suggests. We expected them to overfit on this little data, but rather than assume it, we ran six standard models on twenty-seven thousand rows. **All six landed at essentially the trivial baseline** — no better than predicting the weekly average. That's informative: if adding model capacity doesn't help, the limit isn't the model, it's that the inputs don't determine the output.
 
 **[NOTE]** Never call irregular sampling a limitation — we handle it natively; a judge would flip it into "you couldn't pick the right model." Every limitation = a property of the *data*, never our capability.
 
 ---
 
-## ④ Everyone caps out — 0:30
+## ④ Every approach caps out — 0:30
 **[SHOW]** `f20_benchmark.png`
 
 **[SAY]**
-> So the whole team builds models — mine included; I came at it from the small-data, probabilistic side, Gaussian Processes, and they scored well. But here's the honest result: **everything capped in the same narrow band** — my models, the ML, the baselines, all bunched together. When *every* approach hits the same wall no matter how clever, that's the data talking. Time to stop modelling and ask *why the wall is there.*
+> The whole team built models — mine came from the small-data, probabilistic side, Gaussian Processes, and they scored competitively. But the honest result is that **everything converged to the same narrow band** — my models, the standard ML, the baselines. When independent approaches all plateau at the same level, that points to a limit in the data rather than the models. So the useful question became *why* that limit exists.
 
 ---
 
-## ⑤ Why the ceiling is real — it's the data, not us — 0:40
+## ⑤ Why the ceiling is real — it's the data, not the model — 0:40
 **[SHOW]** `f05_volatility_ramp.png` ✂(or skip to f18)
 
 **[SAY]**
-> We proved the ceiling three ways. One: **day eight isn't like the training week** — on GEO it's up to *seventeen times* more volatile, and it's a ramp that keeps climbing. Two: on these tiny test sets, even a *perfect* model can't score near the top — on six points it lands anywhere from 0.79 to 0.98 *by luck alone*. A chunk of the score is a lottery, and we measured that in advance. Three: we handed a *cheater* the actual GEO answer key — it improved by **0.3%.** There's genuinely nothing in that file to predict.
+> We checked that ceiling three ways. One: **day eight isn't drawn from the same distribution as the training week** — on GEO it's up to seventeen times more volatile, and it's a steady ramp, not a one-off spike. Two: at these test-set sizes even a *perfect* model can't score near the top — on six points a flawless predictor lands anywhere from 0.79 to 0.98 by chance, so part of the score is genuinely luck. Three: we gave a predictor the actual GEO answer key's average — which no real model could use — and it improved on doing nothing by **0.3%**. There's effectively no predictable signal in that file.
 
 ---
 
-## ⑥ We rebuilt the physics ourselves — 1:15
+## ⑥ Bringing physics in from outside the data — 1:15
 **[SHOW]** `f06_beat_frequencies.png`
 
-**[SAY — the crown jewel, slow down]**
-> If the answer isn't in the data, we bring it in from outside — from physics. And we found something beautiful.
+**[SAY]**
+> If the information that decides day eight isn't in the data, it has to come from outside it — from physics. The key result is this.
 >
-> The data's in Earth-fixed coordinates — a frame glued to the *spinning* Earth. But the satellite's error rotates with the *satellite.* So we're recording two rotations *multiplied together.* And basic trig — sine times cosine — says: multiply two rhythms, you don't get one back, you get **two** — the sum and the difference of their speeds.
->
-> So the X and Y error don't appear at the orbital period at all — they split into two *beat* frequencies. Only Z, the spin axis, keeps the pure period. **A model that fits one rhythm to all three axes is guaranteed wrong on two of them.**
+> The data is in Earth-fixed coordinates — a frame attached to the rotating Earth. But the satellite's error rotates with the *satellite*. So what's recorded is the two rotations multiplied together, and there's a standard trig identity — sine times cosine — where multiplying two rhythms produces two new ones, at the sum and the difference of their frequencies. So the X and Y error don't appear at the orbital period; they split into two *beat* frequencies. Only Z, the rotation axis, keeps the orbital period. A model that fits one rhythm to all three axes is therefore wrong on two of them.
 
 **[SHOW]** `f07_periodogram.png`
 **[SAY]**
-> And we didn't fit-then-explain. We calculated where those beats *must* be, from physics, and drew them on the real data **before looking.** Dead on the peaks.
+> And this is derived, not fitted after the fact: we computed where those beat frequencies must be, marked them on the real data before looking, and they line up with the peaks.
 
 **[SHOW]** `f11_recovery_distribution.png`
-**[SAY — generator = proof, not training]**
-> Then, since we only had *three* real satellites — too few to trust anything — we turned that physics into a **generator**: a little engine that makes physically-real fake satellites, sampled at the same irregular timestamps. We made **120 of them**, hid day eight, and asked our model to predict it. It beat "do nothing" on the overwhelming majority — *(confirm exact % on f11)* — across 120 independent satellites. That's how you prove a model works when the real data is too scarce to trust.
+**[SAY]**
+> We only had three real satellites, which is too few to trust any result on. So we used the same physics to build a generator — it produces physically consistent synthetic satellites, sampled at the real files' irregular timestamps. We generated 120, held out day eight on each, and the model recovered it, beating the do-nothing baseline on the large majority *(confirm exact % on f11)*. That's how we validated it despite the scarce real data.
 
-**[NOTE]** Say "generator to *prove* ourselves 120 times," not "training data." The model has nothing to train — it fits live per window. (If PRESTO's train-a-deep-net-on-synthetic comes up: we tested that philosophy, it ties/loses — can't manufacture missing information. Don't raise unprompted.)
+**[NOTE]** Say "generator to *validate* across 120 cases," not "training data." The model has nothing to train — it fits live per window. (If PRESTO's train-a-deep-net-on-synthetic comes up: we tested that philosophy, it ties/loses — can't manufacture missing information. Don't raise unprompted.)
 
 ---
 
-## ⑦ SMART-HORIZON — the model that works ⭐ — 1:40
+## ⑦ SMART-HORIZON — the model — 1:40
 **[SHOW]** `f22_how_it_works.png`
 
-**[SAY — how it works]**
-> So here's the model, and it's almost embarrassingly principled. Three layers: **physics decides which rhythms are even allowed** — only the beats orbital mechanics permits. **The window grades itself** — fit on days one to six, test on day seven which we hide, let the data pick the best basis, no hand-tuning. **A robust regression fits the coefficients.**
+**[SAY]**
+> The model itself is deliberately simple, in three layers. **Physics fixes which rhythms are admissible** — only the beat frequencies orbital mechanics allows. **The window selects its own basis** — we fit on days one to six, score on a held-out day seven, and let the data choose. **A regularised regression fits the coefficients.**
 >
-> And the part I love: **there's nothing to train and store.** Every time you hand it a satellite, it fits *fresh* inside that satellite's own week. So it literally *can't* overfit to some past dataset — there is no dataset. Give it a constellation we've never seen, it just fits *that one.* It's not memorising, it's applying physics live.
+> One consequence worth noting: there's no stored trained model. It fits each satellite's own week at prediction time, so there's no training set it can be overfit to — which is also why it should transfer to constellations we haven't seen.
 
 **[SHOW]** `f14_results.png`
-**[SAY — the mic-drop]**
-> On the real MEO satellites: **57% and 19% better than doing nothing.** But the line to remember — **it beats the cheat.** We showed a predictor the actual answer key's average — outright cheating — and our model, which never saw the answers, *still beat it.* Only possible if you're tracking the *shape* of the day, not just the level. Shape beats level. That's the physics paying off.
+**[SAY]**
+> On the real MEO satellites it's 57% and 19% better than doing nothing. A stronger check: it also beats a predictor that was handed the test set's own average — something no legitimate model can use. That's only possible by tracking the *shape* of the error through the day, not just its average level.
 
 **[SHOW]** `f16_geo_artifact.png` → `f13_artifact_injection.png`
-**[SAY — GEO honesty = maturity flex]**
-> And total honesty on GEO — nothing works, ours included, all stuck near fifteen metres. But watch how we handle it instead of hiding it. The cheater proved there's nothing there. Then we found *why*: **the file is broken.** Consecutive readings are near-perfect opposites — swinging +53 to −75 metres in *four minutes*, which a satellite physically can't do. All four channels flip together — impossible, position and clock are unrelated hardware. The 24 biggest jumps alternate sign 24 out of 24 — one in eight million.
->
-> The clincher: we took a *clean* synthetic satellite we predict almost perfectly, injected *exactly* this pattern, and watched our model collapse the same way. **We reproduced their file's failure on demand.** That's a diagnosis with a repro, not an excuse.
+**[SAY]**
+> On GEO, nothing works — ours included; everything sits near fifteen metres. But we can show that's the data, not the model. The answer-key predictor improved by 0.3%, and when we looked at why, the file turns out to be non-physical: consecutive readings are near-exact opposites, swinging +53 to −75 metres in four minutes, which an orbiting satellite can't do; all four channels flip sign together, though position and clock come from unrelated hardware; and the 24 largest jumps alternate sign 24 times out of 24. To confirm it's the artefact and not us, we injected that same pattern into a clean synthetic satellite we predict well, and the model failed in the same way. So the corruption claim is reproducible, not just inferred.
 
 ---
 
-## ⑧ Why you can trust this — 0:30
+## ⑧ Why the result is trustworthy — 0:30
 **[SAY]**
-> The jury asked for engineering — so: we tried deep learning, it plateaued, we proved it. We built models from every angle, they capped, so we asked *why.* We derived the ceiling from physics. We stress-tested ourselves 120 times with a generator. We reverse-engineered their scoring metric. We even tried removing outliers and tuning everything — and when it didn't help, we reported *that* too.
+> To summarise the engineering path: we tried deep learning and showed it plateaus; we built models from several directions and they capped at the same level, so we investigated why; we derived that ceiling from the physics and from the data itself; we validated on 120 generated cases; we reimplemented the scoring metric to grade ourselves correctly; and we tested the usual refinements like outlier removal, reporting them even where they didn't help.
 >
-> This isn't a lucky result — it's an exhaustively tested one. We know exactly where the ceiling is, why it's there, and that we're sitting right on it — beating the baselines, beating a cheater on the real data, and honestly diagnosing the data that isn't. **That's SMART-HORIZON.**
+> So the result rests on testing at each step rather than on a single model that happened to work: we can say where the ceiling is, why it's there, and that the model sits at it — beating the baselines and the answer-key predictor on the real data, and correctly diagnosing the data that has no signal. That's SMART-HORIZON.
 
-**[DO]** ✂ optional closer — open `interactive.html`: *"Don't believe it? Move the sliders — set corruption to 10% and watch the GEO failure happen live."*
+**[DO]** ✂ optional closer — open `interactive.html`: *"If you want to check it directly — this sandbox runs the same algorithm. Set corruption to 10% and the GEO failure reproduces live."*
 
 ---
 
 ### Trim levers if you're over 7:00
-- Cut ⑤ to one sentence (just the 0.3% cheat line).
+- Cut ⑤ to one sentence (just the 0.3% answer-key line).
 - Drop the periodogram beat in ⑥ (keep the beat-frequency idea + generator).
 - Cut the interactive closer.
 ### If you're under 5:00
-- Add the Shapiro-Francia flex in ②, and the `f15` "traces the arc" line in ⑦.
+- Add the Shapiro-Francia line in ②, and an `f15` line in ⑦ (the model traces the arc while the average sits flat).
 
 ### Decisions baked in (confirm)
-1. Synthetic = **proof/validation**, not training. 2. LSTM/transformer = "reasoned + confirmed with 6 models." 3. Your work = credited fast (probabilistic models + the whole ceiling/metric analysis is yours). 4. Metric = "errors look like noise," jargon parked. 5. Limitations = data properties, irregular sampling not listed. 6. Beat-frequency physics kept as the differentiator.
+1. Synthetic = **validation**, not training. 2. LSTM/transformer = "expected overfit, confirmed with six models." 3. Your work credited fast (probabilistic models + the ceiling/metric analysis). 4. Metric = residual normality, in plain terms; Shapiro-Francia parked. 5. Limitations = data properties; irregular sampling not listed. 6. Beat-frequency physics kept.
 ### Verify on slides: exact % in ⑥ (f11), and that ④'s figure matches your ladder.
