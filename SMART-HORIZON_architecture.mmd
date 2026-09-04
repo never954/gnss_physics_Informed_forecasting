@@ -1,0 +1,20 @@
+flowchart TB
+    A["6 delivered CSVs<br/>GEO + MEO, train/test<br/>x, y, z, clock error (m), no satellite ID"]:::data
+    B["Ingestion & cleaning (sih.py)<br/>lossless de-duplication, gap-aware<br/>native irregular-time handling"]
+    D["Diagnosis<br/>~50% duplicate rows, 13-32% coverage<br/>day-8 distribution shift, volatility ramp"]
+    E["ML-plateau experiment<br/>6 standard models, 27k rows<br/>all flatline at baseline"]
+    F["Conclusion: inputs do not determine output<br/>bring information from OUTSIDE the data"]:::concl
+    G["Physics derivation<br/>ECEF x orbit rotation, sin.cos identity<br/>x,y split into TWO beat frequencies, z keeps period<br/>periods verified on real periodogram"]:::key
+    J["Reverse-engineered synthetic generator (synth.py)<br/>physics to data engine: beats+drift+noise+clock walk<br/>120 satellites at REAL irregular timestamps<br/>purpose: VALIDATION, not training"]:::key
+    M["SMART-HORIZON model (model.py)<br/>L1 physics fixes admissible rhythms<br/>L2 window self-selects basis (hidden day 7)<br/>L3 ridge regression to extrapolate day 8<br/>no stored weights, fits fresh, cannot overfit"]:::key
+    Q["Reverse-engineered scorer (sw_score.py)<br/>Shapiro-Francia, kurtosis-switching<br/>validated vs organiser benchmark"]:::key
+    S["Output: day-8 prediction + 1-sigma, arbitrary times<br/>MEO beats do-nothing AND answer-key predictor<br/>GEO proven corrupt (artefact reproduced on demand)"]:::out
+    A --> B --> D --> E --> F --> G
+    G --> J
+    G --> M
+    J -. validates .-> M
+    M --> Q --> S
+    classDef data fill:#e7ecf0,stroke:#8a97a3,color:#15202a;
+    classDef key fill:#0b7d8c,stroke:#075662,color:#ffffff,stroke-width:2px;
+    classDef concl fill:#f0e4cf,stroke:#9a6a22,color:#15202a;
+    classDef out fill:#d7ece1,stroke:#1e7a56,color:#15202a;
