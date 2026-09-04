@@ -2,6 +2,11 @@
 
 A physics-informed, modular ML pipeline for predicting Signal-in-Space Errors (SISE) of GNSS navigation satellites (GPS, Galileo, BeiDou, GLONASS) using Gaussian Processes, Bootstrap Monte Carlo, and Student-t Processes.
 
+> **See also [`ps08/`](ps08/README.md)** — a companion pipeline built for the *actual* provided
+> competition data (`DATA_PS-08`: irregular sampling, x/y/z/clock errors in metres, scored on
+> Shapiro-Wilk normality). Where this `src/` pipeline targets a regularly-sampled, multi-constellation
+> NASA dataset optimised for accuracy, `ps08/` is the reality-check on the real inputs and metric.
+
 ---
 
 ## Prototype Demo Strategy
