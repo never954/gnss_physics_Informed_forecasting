@@ -1,20 +1,75 @@
+%% SMART-HORIZON — Technical Architecture (full pipeline)
+%% Paste into https://mermaid.live or import into Excalidraw (Mermaid-to-Excalidraw).
 flowchart TB
-    A["6 delivered CSVs<br/>GEO + MEO, train/test<br/>x, y, z, clock error (m), no satellite ID"]:::data
-    B["Ingestion & cleaning (sih.py)<br/>lossless de-duplication, gap-aware<br/>native irregular-time handling"]
-    D["Diagnosis<br/>~50% duplicate rows, 13-32% coverage<br/>day-8 distribution shift, volatility ramp"]
-    E["ML-plateau experiment<br/>6 standard models, 27k rows<br/>all flatline at baseline"]
-    F["Conclusion: inputs do not determine output<br/>bring information from OUTSIDE the data"]:::concl
-    G["Physics derivation<br/>ECEF x orbit rotation, sin.cos identity<br/>x,y split into TWO beat frequencies, z keeps period<br/>periods verified on real periodogram"]:::key
-    J["Reverse-engineered synthetic generator (synth.py)<br/>physics to data engine: beats+drift+noise+clock walk<br/>120 satellites at REAL irregular timestamps<br/>purpose: VALIDATION, not training"]:::key
-    M["SMART-HORIZON model (model.py)<br/>L1 physics fixes admissible rhythms<br/>L2 window self-selects basis (hidden day 7)<br/>L3 ridge regression to extrapolate day 8<br/>no stored weights, fits fresh, cannot overfit"]:::key
-    Q["Reverse-engineered scorer (sw_score.py)<br/>Shapiro-Francia, kurtosis-switching<br/>validated vs organiser benchmark"]:::key
-    S["Output: day-8 prediction + 1-sigma, arbitrary times<br/>MEO beats do-nothing AND answer-key predictor<br/>GEO proven corrupt (artefact reproduced on demand)"]:::out
-    A --> B --> D --> E --> F --> G
-    G --> J
-    G --> M
-    J -. validates .-> M
-    M --> Q --> S
-    classDef data fill:#e7ecf0,stroke:#8a97a3,color:#15202a;
-    classDef key fill:#0b7d8c,stroke:#075662,color:#ffffff,stroke-width:2px;
-    classDef concl fill:#f0e4cf,stroke:#9a6a22,color:#15202a;
-    classDef out fill:#d7ece1,stroke:#1e7a56,color:#15202a;
+
+    N1["<b>INPUT DATA</b>
+    6 delivered CSVs — GEO + MEO, train + test
+    utc_time, x/y/z error (m), clock error (m)
+    orbit label only — no satellite ID"]
+
+    N2["<b>INGESTION &amp; CLEANING</b>  ·  sih.py
+    lossless de-duplication (verified one backward step)
+    parse, sort, drop mis-dated rows
+    gap-aware, native irregular sampling (no interpolation)"]
+
+    N3["<b>DATA DIAGNOSIS</b>  ·  experiments.py
+    ~50% duplicate rows, coverage 13–32%, min test = 6 pts
+    day-8 distribution shift (2.5–17× variance), volatility ramp
+    GEO sign-flip artefact flagged"]
+
+    N4["<b>ML BASELINE TEST</b>  ·  experiments.py
+    6 standard models (Ridge, KNN, RF, GBM, SVR, MLP)
+    27k rows, 19 engineered features → all plateau at baseline
+    ⇒ inputs don't determine output → need external info"]
+
+    N5["<b>PHYSICS DERIVATION</b>  ·  PHYSICS.md
+    orbit class → period (GEO sidereal, MEO per-constellation)
+    ECEF ⊗ Earth rotation → beat frequencies
+    x,y split into two beats; z keeps orbital period
+    clock = random walk + resets → no harmonics on clock
+    periods verified on periodogram before fitting"]
+
+    N6["<b>SYNTHETIC GENERATOR</b>  ·  synth.py
+    physics → data engine: beats + drift + noise + clock RW
+    sampled at real irregular timestamps
+    120 windows with known day-8
+    purpose: validation, not training"]
+
+    N7["<b>SMART-HORIZON MODEL</b>  ·  model.py
+    hypothesis space fixed by physics (admissible periods)
+    per-window period: gap-tolerant Lomb-Scargle, corridor-bounded
+    beat periods derived by formula, not searched
+    candidates: level estimators + harmonic orders
+    basis chosen by held-out day-7 self-validation
+    ridge regression on all 7 days, runaway clamp
+    outputs mean + 1σ, no stored weights (fits per window)"]
+
+    N8["<b>SCORING</b>  ·  sw_score.py
+    reverse-engineered Shapiro-Francia (kurtosis-switching)
+    validated vs organiser benchmark (W 0.981, p 0.584)
+    reports W, p, H (Priority 1) + mean/std (Priority 2)"]
+
+    N9["<b>VALIDATION RESULTS</b>
+    synthetic: beats do-nothing 78% GEO / 51% MEO (120 windows)
+    real MEO: 57% &amp; 19% better, beats answer-key oracle
+    real GEO: 0.3% oracle → file corrupt, reproduced by injection"]
+
+    N10["<b>OUTPUT</b>  ·  predict.py
+    7 days in → day-8 on 15-min grid
+    prediction + 1σ per channel at arbitrary timestamps"]
+
+    N1 --> N2 --> N3 --> N4 --> N5
+    N5 --> N6
+    N5 --> N7
+    N6 -. validates .-> N7
+    N7 --> N8 --> N9 --> N10
+
+    classDef data   fill:#e9ecef,stroke:#868e96,color:#15202a;
+    classDef step   fill:#ffffff,stroke:#495057,color:#15202a;
+    classDef key    fill:#0b7d8c,stroke:#075662,color:#ffffff;
+    classDef result fill:#ebfbee,stroke:#2f9e44,color:#15202a;
+
+    class N1 data;
+    class N2,N3,N4 step;
+    class N5,N6,N7,N8 key;
+    class N9,N10 result;
