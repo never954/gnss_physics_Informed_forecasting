@@ -249,6 +249,40 @@ class ComposedPipeline:
         return self.trend.predict(t.reshape(-1, 1)) + self.gp.predict(t)
 
 
+class BiasCorrected:
+    """Post-process wrapper: remove systematic prediction bias (Priority-2 optimisation).
+
+    Shapiro-W is shift-invariant, so centering the residual at zero never changes the
+    Priority-1 score — but it improves Priority-2 (mean, and std where the error was
+    bias-dominated). The bias is estimated on a time-ordered training hold-out (the tail,
+    which is closest to the forecast region), then subtracted from all predictions.
+    Uses only training data — never the test truth.
+    """
+    def __init__(self, base_cls, period, holdout_frac=0.3):
+        self.base_cls = base_cls
+        self.period = period
+        self.holdout_frac = holdout_frac
+        self.bias = 0.0
+
+    def fit(self, t, y):
+        t = np.asarray(t, dtype=float)
+        y = np.asarray(y, dtype=float)
+        order = np.argsort(t)
+        t, y = t[order], y[order]
+        n = len(t)
+        k = max(3, int(round(n * self.holdout_frac)))
+        if n - k >= 3:
+            base = self.base_cls(self.period).fit(t[:-k], y[:-k])
+            self.bias = float(np.mean(np.asarray(base.predict(t[-k:]), float) - y[-k:]))
+        else:
+            self.bias = 0.0
+        self.model = self.base_cls(self.period).fit(t, y)
+        return self
+
+    def predict(self, t):
+        return np.asarray(self.model.predict(t), float) - self.bias
+
+
 # Registry: name -> factory(period) -> model
 MODELS = {
     CentralBaseline.name: lambda period: CentralBaseline(period),
@@ -257,4 +291,6 @@ MODELS = {
     KalmanLLT.name:       lambda period: KalmanLLT(period),
     EnsembleSelector.name: lambda period: EnsembleSelector(period),
     ComposedPipeline.name: lambda period: ComposedPipeline(period),
+    "A2_gp_bc":           lambda period: BiasCorrected(GPModel, period),
+    "P1_composed_bc":     lambda period: BiasCorrected(ComposedPipeline, period),
 }

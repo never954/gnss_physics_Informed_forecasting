@@ -136,5 +136,51 @@ Gaussian reporting (`report.py`). Prediction = extrapolated robust trend + GP me
 
 ---
 
+## Clock channel — last effort (negative result)
+The clock channel is the worst *and* equally weighted, so it has ~4x leverage on the mean.
+We tested clock-specific treatments against the lean-GP baseline (mean W across pairs):
+
+| strategy | mean clock W |
+|---|---|
+| gp (current) | 0.746 |
+| gp heavy-noise | 0.750 |
+| theilsen | 0.738 |
+| constant | 0.734 |
+| arcsinh transform + gp | 0.734 |
+| huber (poly+harmonic) | 0.720 |
+
+**Conclusion: nothing legitimately lifts it.** Best treatment beats the GP by 0.004 (noise);
+the robust transform and Student-t-style fits do nothing; the extrapolating huber hurts.
+The reason is explicit — the score is set by *unpredictable test-truth spikes* we cannot remove:
+
+```
+GEO  clock: scored 0.578 -> 0.963 if the 13/69 test-outliers were droppable
+MEO2 clock: scored 0.720 -> 0.960 if the  1/18 test-outlier  were droppable
+```
+
+Every treatment acts on the training/prediction side; the barrier is on the test side.
+**The clock channel, and the ~0.84 overall ceiling, is irreducible with the given inputs.**
+The lean GP is already at the wall — keep it simple.
+
+---
+
+## Bias-correction post-process (Priority-2) — tested, does NOT help
+Implemented as `BiasCorrected` (estimate bias on a time-ordered training hold-out, subtract
+it from predictions). Shapiro-W is unchanged (0.837, shift-invariant, as expected) — but
+Priority-2 got slightly *worse*, not better:
+
+| | before | after |
+|---|---|---|
+| A2_gp \|mean\| | 0.378 m | 0.448 m |
+| A2_gp RMSE | 13.217 m | 13.251 m |
+
+**Reason:** the day-8 bias is not predictable from the 7 training days (same
+unforecastability as the values themselves), so the hold-out estimate doesn't transfer;
+and predictions were already near-unbiased (|mean| ≈ 0.2–0.4 m vs std ≈ 13 m). The wrapper
+stays in the registry (`A2_gp_bc`, `P1_composed_bc`) as an option, but is **not recommended**
+on this data. Accuracy for the record: pooled MAE 6.04 m, RMSE 13.2 m; clock MAE 15.9 ns.
+
+---
+
 ## Not pursued
 - **B1 — Synthetic augmentation:** deprioritised by user; revisit only if a new idea needs it.
